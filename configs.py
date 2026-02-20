@@ -179,5 +179,21 @@ na_no_composite = AircraftConfig(
 )
 
 
+# ── 4. European variant (no composite) ────────────────────────
+
+eu_no_composite = AircraftConfig(
+    name="EU Variant (No Composite)",
+    crew_payload_weight=23_380,
+    composite_factor=1.0,               # No composite benefit
+    engine=engine,
+    segments=international_mission(
+        range_nm=1200, alternate_nm=200,
+        cruise_mach=_CRUISE_MACH, cruise_alt=_CRUISE_ALT,
+    ),
+    reserve_after_segment=5,
+    **_COMMON_AERO,
+)
+
+
 # Collect all variants for easy iteration
-ALL_VARIANTS = [na_composite, eu_composite, na_no_composite]
+ALL_VARIANTS = [na_composite, eu_composite, na_no_composite, eu_no_composite]

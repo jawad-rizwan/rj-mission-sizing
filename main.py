@@ -115,6 +115,8 @@ def print_comparison_table(results):
             short_names.append("NA (No Comp)")
         elif "NA" in n:
             short_names.append("NA (Comp)")
+        elif "EU" in n and "No" in n:
+            short_names.append("EU (No Comp)")
         elif "EU" in n:
             short_names.append("EU (Comp)")
         else:
