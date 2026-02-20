@@ -203,7 +203,7 @@ class SizingResult:
     iterations: int
     # Weights
     w0: float               # Takeoff gross weight [lbs]
-    we: float               # Operating empty weight (OEW) [lbs]
+    we: float               # Empty weight [lbs]
     wf: float               # Total fuel weight [lbs]
     w_crew: float           # Crew weight [lbs]
     w_payload: float        # Payload weight [lbs]

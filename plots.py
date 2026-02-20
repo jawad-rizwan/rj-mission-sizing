@@ -26,7 +26,7 @@ def plot_weight_breakdown(results):
     bot2 = [a + b for a, b in zip(we, wf)]
     bot3 = [a + b for a, b in zip(bot2, wc)]
 
-    ax.bar(x, we, label="OEW", color="#4878CF")
+    ax.bar(x, we, label="Empty Weight (We)", color="#4878CF")
     ax.bar(x, wf, bottom=bot1, label="Fuel Weight (Wf)", color="#D65F5F")
     ax.bar(x, wc, bottom=bot2, label="Crew", color="#F5A623")
     ax.bar(x, wp, bottom=bot3, label="Payload", color="#6ACC65")
