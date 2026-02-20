@@ -12,19 +12,24 @@ from configs import ALL_VARIANTS, international_mission
 
 
 def plot_weight_breakdown(results):
-    """Stacked bar chart: We, Wf, Payload for each variant."""
+    """Stacked bar chart: OEW, Wf, Crew, Payload for each variant."""
     names = [r.config_name for r in results]
     we = [r.we for r in results]
     wf = [r.wf for r in results]
+    wc = [r.w_crew for r in results]
     wp = [r.w_payload for r in results]
 
     x = range(len(results))
     fig, ax = plt.subplots(figsize=(9, 5))
 
-    ax.bar(x, we, label="Empty Weight (We)", color="#4878CF")
-    ax.bar(x, wf, bottom=we, label="Fuel Weight (Wf)", color="#D65F5F")
-    ax.bar(x, wp, bottom=[a + b for a, b in zip(we, wf)],
-           label="Crew + Payload", color="#6ACC65")
+    bot1 = we
+    bot2 = [a + b for a, b in zip(we, wf)]
+    bot3 = [a + b for a, b in zip(bot2, wc)]
+
+    ax.bar(x, we, label="OEW", color="#4878CF")
+    ax.bar(x, wf, bottom=bot1, label="Fuel Weight (Wf)", color="#D65F5F")
+    ax.bar(x, wc, bottom=bot2, label="Crew", color="#F5A623")
+    ax.bar(x, wp, bottom=bot3, label="Payload", color="#6ACC65")
 
     for i, r in enumerate(results):
         ax.text(i, r.w0 + 300, f"{r.w0:,.0f} lbs",

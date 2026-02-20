@@ -114,6 +114,15 @@ def international_mission(range_nm: float,
 #  Differences: payload, range, composite vs. non-composite.
 #
 
+# ── Crew weights ─────────────────────────────────────────────────
+# 197 lbs per person (includes personal bag)
+
+_PERSON_WEIGHT = 197                    # [lbs] per crew member incl. bag
+
+_NA_CREW = 2 * _PERSON_WEIGHT + 2 * _PERSON_WEIGHT   # 2 pilots + 2 FAs = 788 lbs
+_EU_CREW = 2 * _PERSON_WEIGHT + 3 * _PERSON_WEIGHT   # 2 pilots + 3 FAs = 985 lbs
+
+
 # ── Common aerodynamic / geometric parameters ───────────────────
 # *** UPDATE ALL OF THESE WITH YOUR DESIGN VALUES ***
 
@@ -135,7 +144,8 @@ _CRUISE_ALT = _COMMON_AERO["cruise_altitude_ft"]
 
 na_composite = AircraftConfig(
     name="NA Variant (Composite)",
-    crew_payload_weight=18_055,         # [lbs] CRJ700 ER max payload
+    payload_weight=18_055,              # [lbs] *** UPDATE *** passengers + cargo
+    crew_weight=_NA_CREW,               # [lbs] 2 pilots + 2 FAs
     composite_factor=0.95,
     engine=engine,
     segments=international_mission(
@@ -151,7 +161,8 @@ na_composite = AircraftConfig(
 
 eu_composite = AircraftConfig(
     name="EU Variant (Composite)",
-    crew_payload_weight=23_380,         # [lbs] CRJ1000 max payload
+    payload_weight=23_380,              # [lbs] *** UPDATE *** passengers + cargo
+    crew_weight=_EU_CREW,               # [lbs] 2 pilots + 3 FAs
     composite_factor=0.95,
     engine=engine,
     segments=international_mission(
@@ -167,7 +178,8 @@ eu_composite = AircraftConfig(
 
 na_no_composite = AircraftConfig(
     name="NA Variant (No Composite)",
-    crew_payload_weight=18_055,
+    payload_weight=18_055,
+    crew_weight=_NA_CREW,
     composite_factor=1.0,               # No composite benefit
     engine=engine,
     segments=international_mission(
@@ -183,7 +195,8 @@ na_no_composite = AircraftConfig(
 
 eu_no_composite = AircraftConfig(
     name="EU Variant (No Composite)",
-    crew_payload_weight=23_380,
+    payload_weight=23_380,
+    crew_weight=_EU_CREW,
     composite_factor=1.0,               # No composite benefit
     engine=engine,
     segments=international_mission(

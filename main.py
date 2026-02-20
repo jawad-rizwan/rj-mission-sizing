@@ -49,11 +49,14 @@ def print_variant_result(result):
     print(f"  Converged in {r.iterations} iterations\n")
 
     # Weight breakdown
+    w_crew_payload = r.w_crew + r.w_payload
     print("  Weight Breakdown:")
     print(f"    {'Takeoff Weight (W0):':<28} {fmt_weight(w0):>10} lbs  (100.0%)")
-    print(f"    {'Empty Weight (We):':<28} {fmt_weight(r.we):>10} lbs  ({r.we_frac*100:5.1f}%)")
+    print(f"    {'OEW:':<28} {fmt_weight(r.we):>10} lbs  ({r.we_frac*100:5.1f}%)")
     print(f"    {'Fuel Weight (Wf):':<28} {fmt_weight(r.wf):>10} lbs  ({r.wf_frac*100:5.1f}%)")
-    print(f"    {'Crew + Payload:':<28} {fmt_weight(r.w_payload):>10} lbs"
+    print(f"    {'Crew:':<28} {fmt_weight(r.w_crew):>10} lbs"
+          f"  ({r.w_crew/w0*100:5.1f}%)")
+    print(f"    {'Payload:':<28} {fmt_weight(r.w_payload):>10} lbs"
           f"  ({r.w_payload/w0*100:5.1f}%)")
     print(f"    {'─' * 50}")
     print(f"    {'Trip Fuel:':<28} {fmt_weight(r.trip_fuel):>10} lbs"
@@ -62,7 +65,7 @@ def print_variant_result(result):
           f"  ({r.reserve_fuel/w0*100:5.1f}%)")
 
     # Verify weights add up
-    residual = abs(w0 - r.we - r.wf - r.w_payload)
+    residual = abs(w0 - r.we - r.wf - r.w_crew - r.w_payload)
     if residual > 1.0:
         print(f"    [Weight residual: {residual:.1f} lbs]")
 
@@ -130,10 +133,11 @@ def print_comparison_table(results):
 
     rows = [
         ("W0 [lbs]",        [f"{r.w0:>14,.0f}" for r in results]),
-        ("We [lbs]",        [f"{r.we:>14,.0f}" for r in results]),
+        ("OEW [lbs]",       [f"{r.we:>14,.0f}" for r in results]),
         ("Wf [lbs]",        [f"{r.wf:>14,.0f}" for r in results]),
+        ("Crew [lbs]",      [f"{r.w_crew:>14,.0f}" for r in results]),
         ("Payload [lbs]",   [f"{r.w_payload:>14,.0f}" for r in results]),
-        ("We/W0",           [f"{r.we_frac:>14.4f}" for r in results]),
+        ("OEW/W0",          [f"{r.we_frac:>14.4f}" for r in results]),
         ("Wf/W0",           [f"{r.wf_frac:>14.4f}" for r in results]),
         ("Trip Fuel [lbs]", [f"{r.trip_fuel:>14,.0f}" for r in results]),
         ("Reserve [lbs]",   [f"{r.reserve_fuel:>14,.0f}" for r in results]),

@@ -109,8 +109,9 @@ class AircraftConfig:
     """
     name: str
 
-    # ── Payload ──
-    crew_payload_weight: float          # [lbs]
+    # ── Payload & Crew ──
+    payload_weight: float               # [lbs] passengers + cargo
+    crew_weight: float                  # [lbs] flight crew + cabin crew (incl. bags)
 
     # ── Empty weight regression (Table 6.1 – Jet Transport) ──
     # We/W0 = a · W0^C1 · A^C2 · (T/W0)^C3 · (W0/S)^C4 · Mmax^C5 · Kvs
@@ -202,9 +203,10 @@ class SizingResult:
     iterations: int
     # Weights
     w0: float               # Takeoff gross weight [lbs]
-    we: float               # Empty weight [lbs]
+    we: float               # Operating empty weight (OEW) [lbs]
     wf: float               # Total fuel weight [lbs]
-    w_payload: float        # Crew + payload [lbs]
+    w_crew: float           # Crew weight [lbs]
+    w_payload: float        # Payload weight [lbs]
     # Fractions
     we_frac: float
     wf_frac: float
@@ -429,7 +431,7 @@ def solve_takeoff_weight(config: AircraftConfig,
         if denom <= 0:
             break  # No solution possible
 
-        w0_new = config.crew_payload_weight / denom
+        w0_new = (config.crew_weight + config.payload_weight) / denom
 
         if abs(w0_new - w0) < tolerance:
             converged = True
@@ -461,8 +463,8 @@ def solve_takeoff_weight(config: AircraftConfig,
     trip_fuel = sum(sr.fuel_burned for sr in seg_results[:config.reserve_after_segment])
     reserve_fuel = wf - trip_fuel
 
-    # Growth factor
-    growth = w0 / config.crew_payload_weight
+    # Growth factor (based on payload only)
+    growth = w0 / config.payload_weight
 
     return SizingResult(
         config_name=config.name,
@@ -471,7 +473,8 @@ def solve_takeoff_weight(config: AircraftConfig,
         w0=w0,
         we=we,
         wf=wf,
-        w_payload=config.crew_payload_weight,
+        w_crew=config.crew_weight,
+        w_payload=config.payload_weight,
         we_frac=we_frac,
         wf_frac=wf_frac,
         trip_fuel=trip_fuel,
