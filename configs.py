@@ -139,6 +139,12 @@ _COMMON_AERO = dict(
 _CRUISE_MACH = _COMMON_AERO["cruise_mach"]
 _CRUISE_ALT = _COMMON_AERO["cruise_altitude_ft"]
 
+# ── Design ranges ────────────────────────────────────────────────
+
+_RANGE_BUFFER = 100                     # [nm] margin for drag/weight uncertainty
+_NA_RANGE = 1800 + _RANGE_BUFFER        # [nm] 1800 + 100 buffer
+_EU_RANGE = 1200 + _RANGE_BUFFER        # [nm] 1200 + 100 buffer
+
 
 # ── 1. North America variant (composite) ────────────────────────
 
@@ -149,7 +155,7 @@ na_composite = AircraftConfig(
     composite_factor=0.95,
     engine=engine,
     segments=international_mission(
-        range_nm=1800, alternate_nm=200,
+        range_nm=_NA_RANGE, alternate_nm=200,
         cruise_mach=_CRUISE_MACH, cruise_alt=_CRUISE_ALT,
     ),
     reserve_after_segment=5,
@@ -166,7 +172,7 @@ eu_composite = AircraftConfig(
     composite_factor=0.95,
     engine=engine,
     segments=international_mission(
-        range_nm=1200, alternate_nm=200,
+        range_nm=_EU_RANGE, alternate_nm=200,
         cruise_mach=_CRUISE_MACH, cruise_alt=_CRUISE_ALT,
     ),
     reserve_after_segment=5,
@@ -183,7 +189,7 @@ na_no_composite = AircraftConfig(
     composite_factor=1.0,               # No composite benefit
     engine=engine,
     segments=international_mission(
-        range_nm=1800, alternate_nm=200,
+        range_nm=_NA_RANGE, alternate_nm=200,
         cruise_mach=_CRUISE_MACH, cruise_alt=_CRUISE_ALT,
     ),
     reserve_after_segment=5,
@@ -200,7 +206,7 @@ eu_no_composite = AircraftConfig(
     composite_factor=1.0,               # No composite benefit
     engine=engine,
     segments=international_mission(
-        range_nm=1200, alternate_nm=200,
+        range_nm=_EU_RANGE, alternate_nm=200,
         cruise_mach=_CRUISE_MACH, cruise_alt=_CRUISE_ALT,
     ),
     reserve_after_segment=5,
