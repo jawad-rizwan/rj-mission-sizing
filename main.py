@@ -8,8 +8,12 @@ Usage:
 """
 
 import copy
-from sizing import solve_takeoff_weight, SegmentType
-from configs import ALL_VARIANTS, international_mission
+from functools import partial
+from sizing import solve_takeoff_weight, evaluate_fixed_w0, find_max_range, SegmentType
+from configs import (
+    ALL_VARIANTS, CONSTRAINED_VARIANTS, international_mission,
+    _CRUISE_MACH, _CRUISE_ALT, _NA_RANGE,
+)
 
 
 # ── Formatting helpers ───────────────────────────────────────────
@@ -154,6 +158,84 @@ def print_comparison_table(results):
         print(line)
 
 
+def print_constrained_variant(config, fixed_w0, design_range):
+    """Display results for a fixed-W0 constrained variant."""
+    print(f"\n{'=' * 72}")
+    print(f"  CONSTRAINED VARIANT — {config.name}")
+    print(f"  Fixed W0 = {fmt_weight(fixed_w0)} lbs")
+    print(f"{'=' * 72}")
+
+    # Evaluate at design range
+    r = evaluate_fixed_w0(config, fixed_w0)
+    w0 = r.w0
+
+    print(f"\n  Weight Breakdown at Design Range ({design_range:.0f} nm):")
+    print(f"    {'Takeoff Weight (W0):':<28} {fmt_weight(w0):>10} lbs  (fixed)")
+    print(f"    {'Empty Weight (We):':<28} {fmt_weight(r.we):>10} lbs  ({r.we_frac*100:5.1f}%)")
+    print(f"    {'Fuel Weight (Wf):':<28} {fmt_weight(r.wf):>10} lbs  ({r.wf_frac*100:5.1f}%)")
+    print(f"    {'Crew:':<28} {fmt_weight(r.w_crew):>10} lbs"
+          f"  ({r.w_crew/w0*100:5.1f}%)")
+    print(f"    {'Payload:':<28} {fmt_weight(r.w_payload):>10} lbs"
+          f"  ({r.w_payload/w0*100:5.1f}%)")
+    print(f"    {'─' * 50}")
+    required = r.we + r.wf + r.w_crew + r.w_payload
+    print(f"    {'Required total:':<28} {fmt_weight(required):>10} lbs")
+    print(f"    {'Weight margin:':<28} {r.weight_margin:>+10.0f} lbs")
+
+    if r.converged:
+        print(f"\n  Mission CLOSES at {design_range:.0f} nm with"
+              f" {r.weight_margin:,.0f} lbs margin.")
+    else:
+        print(f"\n  Mission DOES NOT CLOSE at {design_range:.0f} nm"
+              f" (deficit: {-r.weight_margin:,.0f} lbs).")
+
+        # Find max range that closes
+        builder = partial(
+            international_mission, alternate_nm=200,
+            cruise_mach=config.cruise_mach,
+            cruise_alt=config.cruise_altitude_ft,
+        )
+        max_result, max_range = find_max_range(config, fixed_w0, builder)
+        print(f"  Maximum range at W0 = {fmt_weight(fixed_w0)} lbs:"
+              f" {max_range:,.0f} nm  (margin: {max_result.weight_margin:+.0f} lbs)")
+
+        # Show weight breakdown at max range
+        print(f"\n  Weight Breakdown at Max Range ({max_range:,.0f} nm):")
+        print(f"    {'Takeoff Weight (W0):':<28} {fmt_weight(w0):>10} lbs  (fixed)")
+        print(f"    {'Empty Weight (We):':<28} {fmt_weight(max_result.we):>10} lbs"
+              f"  ({max_result.we_frac*100:5.1f}%)")
+        print(f"    {'Fuel Weight (Wf):':<28} {fmt_weight(max_result.wf):>10} lbs"
+              f"  ({max_result.wf_frac*100:5.1f}%)")
+        print(f"    {'Crew:':<28} {fmt_weight(max_result.w_crew):>10} lbs"
+              f"  ({max_result.w_crew/w0*100:5.1f}%)")
+        print(f"    {'Payload:':<28} {fmt_weight(max_result.w_payload):>10} lbs"
+              f"  ({max_result.w_payload/w0*100:5.1f}%)")
+        r = max_result  # Use max-range result for performance display
+
+    # Mission segment table
+    print(f"\n  Mission Segments:")
+    print(f"    {'#':<4} {'Segment':<40} {'Wi/Wi-1':>8}  {'Fuel [lbs]':>10}")
+    print(f"    {'─' * 66}")
+    for j, sr in enumerate(r.segment_results):
+        extra = ""
+        if sr.cruise_time_s is not None:
+            extra = f"  ({sr.cruise_time_s/60:.1f} min)"
+        print(f"    {j+1:<4} {sr.name:<40} {sr.weight_fraction:>8.4f}"
+              f"  {fmt_weight(sr.fuel_burned):>10}{extra}")
+
+    total_mission_fuel = sum(sr.fuel_burned for sr in r.segment_results)
+    print(f"    {'─' * 66}")
+    print(f"    {'':4} {'Mission fuel (before reserve/trapped):':<40}"
+          f" {'':>8}  {fmt_weight(total_mission_fuel):>10}")
+
+    # Performance
+    print(f"\n  Performance:")
+    print(f"    T/W (SLS):           {r.thrust_to_weight:.3f}")
+    print(f"    W/S (takeoff):       {r.wing_loading:.1f} psf")
+    print(f"    L/D cruise:          {r.ld_cruise:.2f}")
+    print(f"    (L/D)_max:           {r.ld_max:.2f}")
+
+
 def print_range_sensitivity(base_config, range_values):
     """Run sizing at different ranges and show how W0 changes."""
     print(f"\n{'─' * 72}")
@@ -192,6 +274,11 @@ def main():
         print_variant_result(result)
 
     print_comparison_table(results)
+
+    # Constrained (fixed-W0) variants
+    for config, fixed_w0 in CONSTRAINED_VARIANTS:
+        design_range = config.segments[2].range_nm
+        print_constrained_variant(config, fixed_w0, design_range)
 
     # Range sensitivity for the NA composite variant
     na_config = ALL_VARIANTS[0]

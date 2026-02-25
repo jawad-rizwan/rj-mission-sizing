@@ -217,5 +217,28 @@ eu_no_composite = AircraftConfig(
 )
 
 
+# ── 5. NA 50-Seat variant (composite, fixed W0 = 65,000 lbs) ─────
+
+_NA50_PAYLOAD = 50 * _PERSON_WEIGHT + 50 * 30   # 50 pax + 50 bags @ 30 lbs
+
+na_50seat = AircraftConfig(
+    name="NA 50-Seat (Composite)",
+    payload_weight=_NA50_PAYLOAD,                # 11,350 lbs
+    crew_weight=_NA_CREW,                        # 788 lbs (2 pilots + 2 FAs)
+    cd0=0.02113,
+    composite_factor=0.97,
+    engine=engine,
+    segments=international_mission(
+        range_nm=_NA_RANGE, alternate_nm=200,
+        cruise_mach=_CRUISE_MACH, cruise_alt=_CRUISE_ALT,
+    ),
+    reserve_after_segment=5,
+    **_COMMON_AERO,
+)
+
+NA_50SEAT_W0 = 65_000                           # Fixed MTOW constraint [lbs]
+
+
 # Collect all variants for easy iteration
 ALL_VARIANTS = [na_composite, eu_composite, na_no_composite, eu_no_composite]
+CONSTRAINED_VARIANTS = [(na_50seat, NA_50SEAT_W0)]

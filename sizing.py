@@ -5,6 +5,7 @@ Based on Raymer's Aircraft Design: A Conceptual Approach, 7th Ed. (Chapter 6)
 Refined iterative sizing with fixed-engine support.
 """
 
+import copy
 import math
 from dataclasses import dataclass, field
 from enum import Enum, auto
@@ -221,6 +222,7 @@ class SizingResult:
     ld_cruise: float = 0.0
     ld_max: float = 0.0
     growth_factor: float = 0.0
+    weight_margin: float = 0.0          # For fixed-W0: positive = closes
 
 
 # ── Weight Fraction Calculations (Raymer Ch 6) ──────────────────
@@ -486,3 +488,101 @@ def solve_takeoff_weight(config: AircraftConfig,
         ld_max=ld_max_val,
         growth_factor=growth,
     )
+
+
+def evaluate_fixed_w0(config: AircraftConfig, w0: float) -> SizingResult:
+    """
+    Evaluate a mission at a fixed W0 (no iteration).
+
+    Instead of solving for W0, we check whether the given W0 can close
+    the mission.  Returns a SizingResult with weight_margin showing the
+    surplus (positive) or deficit (negative).
+    """
+    tw = config.engine.total_max_thrust / w0
+    ws = w0 / config.wing_area_ft2
+
+    ld_cruise = config.ld_from_drag_polar(ws)
+    ld_max_val = config.ld_max
+
+    seg_results = compute_segment_results(config, w0, ld_cruise, ld_max_val)
+    mission_fuel = sum(sr.fuel_burned for sr in seg_results)
+    wf = config.trapped_fuel_factor * mission_fuel
+    wf_frac = wf / w0
+
+    we_frac = empty_weight_fraction_ch6(w0, config, tw, ws)
+    we = w0 * we_frac
+
+    trip_fuel = sum(sr.fuel_burned for sr in seg_results[:config.reserve_after_segment])
+    reserve_fuel = wf - trip_fuel
+
+    margin = w0 - we - wf - config.crew_weight - config.payload_weight
+    closes = margin >= 0.0
+
+    growth = w0 / config.payload_weight
+
+    return SizingResult(
+        config_name=config.name,
+        converged=closes,
+        iterations=0,
+        w0=w0,
+        we=we,
+        wf=wf,
+        w_crew=config.crew_weight,
+        w_payload=config.payload_weight,
+        we_frac=we_frac,
+        wf_frac=wf_frac,
+        trip_fuel=trip_fuel,
+        reserve_fuel=reserve_fuel,
+        segment_results=seg_results,
+        thrust_to_weight=tw,
+        wing_loading=ws,
+        ld_cruise=ld_cruise,
+        ld_max=ld_max_val,
+        growth_factor=growth,
+        weight_margin=margin,
+    )
+
+
+def find_max_range(config: AircraftConfig,
+                   w0: float,
+                   mission_builder,
+                   range_lo: float = 100.0,
+                   range_hi: float = 5000.0,
+                   tolerance_nm: float = 1.0) -> tuple[SizingResult, float]:
+    """
+    Binary search for the maximum cruise range at which a fixed W0 closes.
+
+    Args:
+        config:          Base aircraft config (segments will be rebuilt).
+        w0:              Fixed takeoff weight [lbs].
+        mission_builder: Callable(range_nm) -> list[MissionSegment].
+        range_lo:        Lower bound [nm].
+        range_hi:        Upper bound [nm].
+        tolerance_nm:    Convergence tolerance [nm].
+
+    Returns:
+        (SizingResult at max range, max_range_nm)
+    """
+    best_result = None
+    best_range = range_lo
+
+    while (range_hi - range_lo) > tolerance_nm:
+        mid = (range_lo + range_hi) / 2.0
+        cfg = copy.deepcopy(config)
+        cfg.segments = mission_builder(mid)
+        result = evaluate_fixed_w0(cfg, w0)
+        if result.weight_margin >= 0:
+            best_result = result
+            best_range = mid
+            range_lo = mid
+        else:
+            range_hi = mid
+
+    # Final evaluation at converged range
+    if best_result is None:
+        cfg = copy.deepcopy(config)
+        cfg.segments = mission_builder(range_lo)
+        best_result = evaluate_fixed_w0(cfg, w0)
+        best_range = range_lo
+
+    return best_result, best_range

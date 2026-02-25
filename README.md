@@ -34,6 +34,9 @@ python3 plots.py
 | EU Composite | 23,380 | 1,250 | 0.02185 | 0.97 |
 | NA No Composite | 18,055 | 1,850 | 0.02113 | 1.00 |
 | EU No Composite | 23,380 | 1,250 | 0.02185 | 1.00 |
+| NA 50-Seat (Composite) | 11,350 | 1,850* | 0.02113 | 0.97 |
+
+*Fixed W0 = 65,000 lbs; mission does not close at design range. Max range ≈ 1,607 nm.
 
 Composite factor of 0.97 reflects composite wing + tail with metal fuselage. Design ranges include a 50 nm buffer for uncertainty.
 
@@ -49,6 +52,18 @@ Composite factor of 0.97 reflects composite wing + tail with metal fuselage. Des
 | W/S [psf] | 108.4 | 115.4 | 113.5 | 120.1 |
 | L/D cruise | 14.72 | 14.40 | 14.64 | 14.31 |
 | Growth Factor | 4.76 | 3.91 | 4.98 | 4.07 |
+
+### NA 50-Seat (Composite) — Fixed W0 = 65,000 lbs
+
+| Parameter | Design Range (1,850 nm) | Max Range (1,607 nm) |
+|-----------|------------------------|---------------------|
+| W0 [lbs] | 65,000 (fixed) | 65,000 (fixed) |
+| We [lbs] | 38,118 | 38,118 |
+| Wf [lbs] | 15,780 | 14,743 |
+| Margin [lbs] | -1,036 (does not close) | +1 (closes) |
+| T/W (SLS) | 0.590 | 0.590 |
+| W/S [psf] | 82.0 | 82.0 |
+| L/D cruise | 14.51 | 14.51 |
 
 Engine: PW1200G (2 x 19,190 lbf, BPR 9, TSFC 0.48 cruise / 0.38 loiter).
 
