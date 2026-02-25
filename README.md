@@ -37,6 +37,21 @@ python3 plots.py
 
 Composite factor of 0.97 reflects composite wing + tail with metal fuselage. Design ranges include a 50 nm buffer for uncertainty.
 
+## Results
+
+| Parameter | NA (Comp) | EU (Comp) | NA (No Comp) | EU (No Comp) |
+|-----------|----------|----------|-------------|-------------|
+| W0 [lbs] | 85,913 | 91,421 | 89,927 | 95,158 |
+| We [lbs] | 46,363 | 48,430 | 49,354 | 51,352 |
+| Wf [lbs] | 20,707 | 18,625 | 21,730 | 19,441 |
+| Trip Fuel [lbs] | 15,801 | 13,375 | 16,589 | 13,968 |
+| T/W (SLS) | 0.447 | 0.420 | 0.427 | 0.403 |
+| W/S [psf] | 108.4 | 115.4 | 113.5 | 120.1 |
+| L/D cruise | 14.72 | 14.40 | 14.64 | 14.31 |
+| Growth Factor | 4.76 | 3.91 | 4.98 | 4.07 |
+
+Engine: PW1200G (2 x 19,190 lbf, BPR 9, TSFC 0.48 cruise / 0.38 loiter).
+
 ## Configuration
 
 Most parameters in `configs.py` have been set to design values. Remaining estimates marked with `*** UPDATE ***` can be refined as better data becomes available.
