@@ -490,13 +490,20 @@ def solve_takeoff_weight(config: AircraftConfig,
     )
 
 
-def evaluate_fixed_w0(config: AircraftConfig, w0: float) -> SizingResult:
+def evaluate_fixed_w0(config: AircraftConfig, w0: float,
+                      fixed_we: float | None = None) -> SizingResult:
     """
     Evaluate a mission at a fixed W0 (no iteration).
 
     Instead of solving for W0, we check whether the given W0 can close
     the mission.  Returns a SizingResult with weight_margin showing the
     surplus (positive) or deficit (negative).
+
+    Args:
+        config:    Aircraft configuration.
+        w0:        Fixed takeoff gross weight [lbs].
+        fixed_we:  If provided, use this empty weight instead of the
+                   regression (e.g. same airframe as a larger variant).
     """
     tw = config.engine.total_max_thrust / w0
     ws = w0 / config.wing_area_ft2
@@ -509,8 +516,12 @@ def evaluate_fixed_w0(config: AircraftConfig, w0: float) -> SizingResult:
     wf = config.trapped_fuel_factor * mission_fuel
     wf_frac = wf / w0
 
-    we_frac = empty_weight_fraction_ch6(w0, config, tw, ws)
-    we = w0 * we_frac
+    if fixed_we is not None:
+        we = fixed_we
+        we_frac = we / w0
+    else:
+        we_frac = empty_weight_fraction_ch6(w0, config, tw, ws)
+        we = w0 * we_frac
 
     trip_fuel = sum(sr.fuel_burned for sr in seg_results[:config.reserve_after_segment])
     reserve_fuel = wf - trip_fuel
@@ -546,6 +557,7 @@ def evaluate_fixed_w0(config: AircraftConfig, w0: float) -> SizingResult:
 def find_max_range(config: AircraftConfig,
                    w0: float,
                    mission_builder,
+                   fixed_we: float | None = None,
                    range_lo: float = 100.0,
                    range_hi: float = 5000.0,
                    tolerance_nm: float = 1.0) -> tuple[SizingResult, float]:
@@ -556,6 +568,7 @@ def find_max_range(config: AircraftConfig,
         config:          Base aircraft config (segments will be rebuilt).
         w0:              Fixed takeoff weight [lbs].
         mission_builder: Callable(range_nm) -> list[MissionSegment].
+        fixed_we:        If provided, use this empty weight (same-airframe).
         range_lo:        Lower bound [nm].
         range_hi:        Upper bound [nm].
         tolerance_nm:    Convergence tolerance [nm].
@@ -570,7 +583,7 @@ def find_max_range(config: AircraftConfig,
         mid = (range_lo + range_hi) / 2.0
         cfg = copy.deepcopy(config)
         cfg.segments = mission_builder(mid)
-        result = evaluate_fixed_w0(cfg, w0)
+        result = evaluate_fixed_w0(cfg, w0, fixed_we=fixed_we)
         if result.weight_margin >= 0:
             best_result = result
             best_range = mid
@@ -582,7 +595,7 @@ def find_max_range(config: AircraftConfig,
     if best_result is None:
         cfg = copy.deepcopy(config)
         cfg.segments = mission_builder(range_lo)
-        best_result = evaluate_fixed_w0(cfg, w0)
+        best_result = evaluate_fixed_w0(cfg, w0, fixed_we=fixed_we)
         best_range = range_lo
 
     return best_result, best_range

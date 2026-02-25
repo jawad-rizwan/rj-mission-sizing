@@ -237,8 +237,9 @@ na_50seat = AircraftConfig(
 )
 
 NA_50SEAT_W0 = 65_000                           # Fixed MTOW constraint [lbs]
+NA_50SEAT_REF = na_composite                    # Same airframe → use its We
 
 
 # Collect all variants for easy iteration
 ALL_VARIANTS = [na_composite, eu_composite, na_no_composite, eu_no_composite]
-CONSTRAINED_VARIANTS = [(na_50seat, NA_50SEAT_W0)]
+CONSTRAINED_VARIANTS = [(na_50seat, NA_50SEAT_W0, NA_50SEAT_REF)]

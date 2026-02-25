@@ -158,20 +158,22 @@ def print_comparison_table(results):
         print(line)
 
 
-def print_constrained_variant(config, fixed_w0, design_range):
-    """Display results for a fixed-W0 constrained variant."""
+def print_constrained_variant(config, fixed_w0, design_range, ref_we):
+    """Display results for a fixed-W0, same-airframe constrained variant."""
     print(f"\n{'=' * 72}")
     print(f"  CONSTRAINED VARIANT — {config.name}")
-    print(f"  Fixed W0 = {fmt_weight(fixed_w0)} lbs")
+    print(f"  Fixed W0 = {fmt_weight(fixed_w0)} lbs  |"
+          f"  Airframe We = {fmt_weight(ref_we)} lbs")
     print(f"{'=' * 72}")
 
     # Evaluate at design range
-    r = evaluate_fixed_w0(config, fixed_w0)
+    r = evaluate_fixed_w0(config, fixed_w0, fixed_we=ref_we)
     w0 = r.w0
 
     print(f"\n  Weight Breakdown at Design Range ({design_range:.0f} nm):")
     print(f"    {'Takeoff Weight (W0):':<28} {fmt_weight(w0):>10} lbs  (fixed)")
-    print(f"    {'Empty Weight (We):':<28} {fmt_weight(r.we):>10} lbs  ({r.we_frac*100:5.1f}%)")
+    print(f"    {'Empty Weight (We):':<28} {fmt_weight(r.we):>10} lbs"
+          f"  ({r.we_frac*100:5.1f}%)  (same airframe)")
     print(f"    {'Fuel Weight (Wf):':<28} {fmt_weight(r.wf):>10} lbs  ({r.wf_frac*100:5.1f}%)")
     print(f"    {'Crew:':<28} {fmt_weight(r.w_crew):>10} lbs"
           f"  ({r.w_crew/w0*100:5.1f}%)")
@@ -195,22 +197,71 @@ def print_constrained_variant(config, fixed_w0, design_range):
             cruise_mach=config.cruise_mach,
             cruise_alt=config.cruise_altitude_ft,
         )
-        max_result, max_range = find_max_range(config, fixed_w0, builder)
-        print(f"  Maximum range at W0 = {fmt_weight(fixed_w0)} lbs:"
-              f" {max_range:,.0f} nm  (margin: {max_result.weight_margin:+.0f} lbs)")
+        max_result, max_range = find_max_range(
+            config, fixed_w0, builder, fixed_we=ref_we,
+        )
 
-        # Show weight breakdown at max range
-        print(f"\n  Weight Breakdown at Max Range ({max_range:,.0f} nm):")
-        print(f"    {'Takeoff Weight (W0):':<28} {fmt_weight(w0):>10} lbs  (fixed)")
-        print(f"    {'Empty Weight (We):':<28} {fmt_weight(max_result.we):>10} lbs"
-              f"  ({max_result.we_frac*100:5.1f}%)")
-        print(f"    {'Fuel Weight (Wf):':<28} {fmt_weight(max_result.wf):>10} lbs"
-              f"  ({max_result.wf_frac*100:5.1f}%)")
-        print(f"    {'Crew:':<28} {fmt_weight(max_result.w_crew):>10} lbs"
-              f"  ({max_result.w_crew/w0*100:5.1f}%)")
-        print(f"    {'Payload:':<28} {fmt_weight(max_result.w_payload):>10} lbs"
-              f"  ({max_result.w_payload/w0*100:5.1f}%)")
-        r = max_result  # Use max-range result for performance display
+        if max_result.weight_margin >= 0:
+            print(f"  Maximum range at W0 = {fmt_weight(fixed_w0)} lbs:"
+                  f" {max_range:,.0f} nm  (margin: {max_result.weight_margin:+.0f} lbs)")
+
+            # Show weight breakdown at max range
+            print(f"\n  Weight Breakdown at Max Range ({max_range:,.0f} nm):")
+            print(f"    {'Takeoff Weight (W0):':<28} {fmt_weight(w0):>10} lbs  (fixed)")
+            print(f"    {'Empty Weight (We):':<28} {fmt_weight(max_result.we):>10} lbs"
+                  f"  ({max_result.we_frac*100:5.1f}%)  (same airframe)")
+            print(f"    {'Fuel Weight (Wf):':<28} {fmt_weight(max_result.wf):>10} lbs"
+                  f"  ({max_result.wf_frac*100:5.1f}%)")
+            print(f"    {'Crew:':<28} {fmt_weight(max_result.w_crew):>10} lbs"
+                  f"  ({max_result.w_crew/w0*100:5.1f}%)")
+            print(f"    {'Payload:':<28} {fmt_weight(max_result.w_payload):>10} lbs"
+                  f"  ({max_result.w_payload/w0*100:5.1f}%)")
+            r = max_result  # Use max-range result for performance display
+        else:
+            # Cannot close at any range — overhead alone exceeds W0
+            min_wf = max_result.wf  # fuel at minimum range
+            overhead = ref_we + min_wf + config.crew_weight + config.payload_weight
+            print(f"\n  INFEASIBLE — mission cannot close at any range.")
+            print(f"    Even at zero cruise range, overhead weight is"
+                  f" {fmt_weight(overhead)} lbs")
+            print(f"    (We={fmt_weight(ref_we)}"
+                  f" + min Wf={fmt_weight(min_wf)}"
+                  f" + crew={fmt_weight(config.crew_weight)}"
+                  f" + payload={fmt_weight(config.payload_weight)})")
+            print(f"    exceeds W0 = {fmt_weight(fixed_w0)} lbs"
+                  f" by {fmt_weight(overhead - w0)} lbs.")
+
+            # Find minimum W0 that closes at zero cruise range
+            # (binary search on W0)
+            w0_lo, w0_hi = fixed_w0, fixed_w0 * 2.0
+            for _ in range(50):
+                w0_mid = (w0_lo + w0_hi) / 2.0
+                cfg_zero = copy.deepcopy(config)
+                cfg_zero.segments = builder(100.0)
+                r_test = evaluate_fixed_w0(cfg_zero, w0_mid, fixed_we=ref_we)
+                if r_test.weight_margin >= 0:
+                    w0_hi = w0_mid
+                else:
+                    w0_lo = w0_mid
+            min_w0_zero = w0_hi
+            print(f"\n    Minimum W0 for zero useful range (100 nm):"
+                  f" {fmt_weight(min_w0_zero)} lbs")
+
+            # W0-vs-range trade: find max range at several W0 values
+            print(f"\n  W0 vs. Maximum Range (same airframe, same payload):")
+            print(f"    {'W0 [lbs]':>12}  {'Max Range [nm]':>16}  {'Margin [lbs]':>14}")
+            print(f"    {'─' * 46}")
+            for w0_try in range(int(min_w0_zero // 1000) * 1000,
+                                int(fixed_w0 * 1.5) + 1, 2000):
+                mr, rng = find_max_range(config, w0_try, builder,
+                                         fixed_we=ref_we)
+                if mr.weight_margin >= 0:
+                    marker = " <-- target" if w0_try == fixed_w0 else ""
+                    print(f"    {w0_try:>12,}  {rng:>16,.0f}  "
+                          f"{mr.weight_margin:>+14.0f}{marker}")
+                else:
+                    print(f"    {w0_try:>12,}  {'INFEASIBLE':>16}  "
+                          f"{mr.weight_margin:>+14.0f}")
 
     # Mission segment table
     print(f"\n  Mission Segments:")
@@ -275,10 +326,13 @@ def main():
 
     print_comparison_table(results)
 
-    # Constrained (fixed-W0) variants
-    for config, fixed_w0 in CONSTRAINED_VARIANTS:
+    # Constrained (fixed-W0, same-airframe) variants
+    # Look up the reference variant's We from the already-solved results
+    ref_we_lookup = {r.config_name: r.we for r in results}
+    for config, fixed_w0, ref_config in CONSTRAINED_VARIANTS:
+        ref_we = ref_we_lookup[ref_config.name]
         design_range = config.segments[2].range_nm
-        print_constrained_variant(config, fixed_w0, design_range)
+        print_constrained_variant(config, fixed_w0, design_range, ref_we)
 
     # Range sensitivity for the NA composite variant
     na_config = ALL_VARIANTS[0]

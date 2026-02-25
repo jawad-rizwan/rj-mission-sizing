@@ -36,7 +36,7 @@ python3 plots.py
 | EU No Composite | 23,380 | 1,250 | 0.02185 | 1.00 |
 | NA 50-Seat (Composite) | 11,350 | 1,850* | 0.02113 | 0.97 |
 
-*Fixed W0 = 65,000 lbs; mission does not close at design range. Max range ≈ 1,607 nm.
+*Fixed W0 = 65,000 lbs, same airframe as NA 75-seat (We = 46,363 lbs). Mission is infeasible — see below.
 
 Composite factor of 0.97 reflects composite wing + tail with metal fuselage. Design ranges include a 50 nm buffer for uncertainty.
 
@@ -53,17 +53,24 @@ Composite factor of 0.97 reflects composite wing + tail with metal fuselage. Des
 | L/D cruise | 14.72 | 14.40 | 14.64 | 14.31 |
 | Growth Factor | 4.76 | 3.91 | 4.98 | 4.07 |
 
-### NA 50-Seat (Composite) — Fixed W0 = 65,000 lbs
+### NA 50-Seat (Composite) — Same Airframe, Fixed W0 = 65,000 lbs
 
-| Parameter | Design Range (1,850 nm) | Max Range (1,607 nm) |
-|-----------|------------------------|---------------------|
-| W0 [lbs] | 65,000 (fixed) | 65,000 (fixed) |
-| We [lbs] | 38,118 | 38,118 |
-| Wf [lbs] | 15,780 | 14,743 |
-| Margin [lbs] | -1,036 (does not close) | +1 (closes) |
-| T/W (SLS) | 0.590 | 0.590 |
-| W/S [psf] | 82.0 | 82.0 |
-| L/D cruise | 14.51 | 14.51 |
+CRJ550-style derivative: same airframe as the NA 75-seat (We = 46,363 lbs), reconfigured to 50-seat cabin, constrained to W0 = 65,000 lbs.
+
+**Result: Infeasible at 65,000 lbs.** Even at zero cruise range, overhead weight (We + min fuel + crew + payload = 66,332 lbs) exceeds the cap by 1,332 lbs. The minimum W0 for any useful mission is ~66,500 lbs.
+
+W0 vs. maximum range (same airframe, same payload):
+
+| W0 [lbs] | Max Range [nm] |
+|-----------|---------------|
+| 65,000 | Infeasible |
+| 68,000 | 363 |
+| 70,000 | 708 |
+| 72,000 | 1,044 |
+| 74,000 | 1,372 |
+| 76,000 | 1,689 |
+| 78,000 | 1,997 |
+| 80,000 | 2,296 |
 
 Engine: PW1200G (2 x 19,190 lbf, BPR 9, TSFC 0.48 cruise / 0.38 loiter).
 
