@@ -16,12 +16,12 @@ from sizing import (
 # ═════════════════════════════════════════════════════════════════
 
 engine = Engine(
-    name="CF34-8C5",                    # *** UPDATE *** with your selected engine
-    tsfc_cruise=0.50,                   # *** UPDATE *** [lb/(lb·hr)] at cruise
-    tsfc_loiter=0.40,                   # *** UPDATE *** [lb/(lb·hr)] at loiter
-    max_thrust_per_engine=14_510,       # *** UPDATE *** [lbs] sea level static
+    name="PW1200G",
+    tsfc_cruise=0.48,                   # [lb/(lb·hr)] at cruise — estimated for high-BPR GTF
+    tsfc_loiter=0.38,                   # [lb/(lb·hr)] at loiter — ~80% of cruise TSFC
+    max_thrust_per_engine=19_190,       # [lbf] sea level static
     num_engines=2,
-    bypass_ratio=5.0,
+    bypass_ratio=9.0,
 )
 
 
@@ -127,11 +127,10 @@ _EU_CREW = 2 * _PERSON_WEIGHT + 3 * _PERSON_WEIGHT   # 2 pilots + 3 FAs = 985 lb
 # *** UPDATE ALL OF THESE WITH YOUR DESIGN VALUES ***
 
 _COMMON_AERO = dict(
-    aspect_ratio=7.8,           # *** UPDATE ***
-    cd0=0.020,                  # *** UPDATE ***
-    oswald_e=0.80,              # *** UPDATE ***
-    wing_area_ft2=520.0,        # *** UPDATE *** [ft²]
-    mach_max=0.85,              # *** UPDATE ***
+    aspect_ratio=7.8,
+    oswald_e=0.753,
+    wing_area_ft2=792.47,       # [ft²]
+    mach_max=0.85,
     cruise_mach=0.78,
     cruise_altitude_ft=41_000.0,
 )
@@ -141,18 +140,19 @@ _CRUISE_ALT = _COMMON_AERO["cruise_altitude_ft"]
 
 # ── Design ranges ────────────────────────────────────────────────
 
-_RANGE_BUFFER = 100                     # [nm] margin for drag/weight uncertainty
-_NA_RANGE = 1800 + _RANGE_BUFFER        # [nm] 1800 + 100 buffer
-_EU_RANGE = 1200 + _RANGE_BUFFER        # [nm] 1200 + 100 buffer
+_RANGE_BUFFER = 50                      # [nm] margin for drag/weight uncertainty
+_NA_RANGE = 1800 + _RANGE_BUFFER        # [nm] 1800 + 50 buffer
+_EU_RANGE = 1200 + _RANGE_BUFFER        # [nm] 1200 + 50 buffer
 
 
 # ── 1. North America variant (composite) ────────────────────────
 
 na_composite = AircraftConfig(
     name="NA Variant (Composite)",
-    payload_weight=18_055,              # [lbs] *** UPDATE *** passengers + cargo
+    payload_weight=18_055,              # [lbs] passengers + cargo
     crew_weight=_NA_CREW,               # [lbs] 2 pilots + 2 FAs
-    composite_factor=0.95,
+    cd0=0.02113,
+    composite_factor=0.97,              # Composite wing + tail, metal fuselage
     engine=engine,
     segments=international_mission(
         range_nm=_NA_RANGE, alternate_nm=200,
@@ -167,9 +167,10 @@ na_composite = AircraftConfig(
 
 eu_composite = AircraftConfig(
     name="EU Variant (Composite)",
-    payload_weight=23_380,              # [lbs] *** UPDATE *** passengers + cargo
+    payload_weight=23_380,              # [lbs] passengers + cargo
     crew_weight=_EU_CREW,               # [lbs] 2 pilots + 3 FAs
-    composite_factor=0.95,
+    cd0=0.02185,
+    composite_factor=0.97,              # Composite wing + tail, metal fuselage
     engine=engine,
     segments=international_mission(
         range_nm=_EU_RANGE, alternate_nm=200,
@@ -186,6 +187,7 @@ na_no_composite = AircraftConfig(
     name="NA Variant (No Composite)",
     payload_weight=18_055,
     crew_weight=_NA_CREW,
+    cd0=0.02113,
     composite_factor=1.0,               # No composite benefit
     engine=engine,
     segments=international_mission(
@@ -203,6 +205,7 @@ eu_no_composite = AircraftConfig(
     name="EU Variant (No Composite)",
     payload_weight=23_380,
     crew_weight=_EU_CREW,
+    cd0=0.02185,
     composite_factor=1.0,               # No composite benefit
     engine=engine,
     segments=international_mission(

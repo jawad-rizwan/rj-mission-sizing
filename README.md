@@ -28,16 +28,18 @@ python3 plots.py
 
 ## Variants
 
-| Variant | Payload (lbs) | Range (nm) | Composite Factor |
-|---------|--------------|------------|-----------------|
-| NA Composite | 18,055 | 1,800 | 0.95 |
-| EU Composite | 23,380 | 1,200 | 0.95 |
-| NA No Composite | 18,055 | 1,800 | 1.00 |
-| EU No Composite | 23,380 | 1,200 | 1.00 |
+| Variant | Payload (lbs) | Range (nm) | CD0 | Composite Factor |
+|---------|--------------|------------|-----|-----------------|
+| NA Composite | 18,055 | 1,850 | 0.02113 | 0.97 |
+| EU Composite | 23,380 | 1,250 | 0.02185 | 0.97 |
+| NA No Composite | 18,055 | 1,850 | 0.02113 | 1.00 |
+| EU No Composite | 23,380 | 1,250 | 0.02185 | 1.00 |
+
+Composite factor of 0.97 reflects composite wing + tail with metal fuselage. Design ranges include a 50 nm buffer for uncertainty.
 
 ## Configuration
 
-All configurable parameters are in `configs.py`. Parameters currently using CRJ700/CRJ1000 placeholder values are marked with `*** UPDATE ***` comments. See the engine, aerodynamic, and variant sections in that file.
+Most parameters in `configs.py` have been set to design values. Remaining estimates marked with `*** UPDATE ***` can be refined as better data becomes available.
 
 ## Methods
 
