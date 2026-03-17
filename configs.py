@@ -1,33 +1,39 @@
 """
 Aircraft variant configurations for Regional Jet sizing.
 
-All parameters marked *** UPDATE *** are CRJ700-like defaults.
-Replace them with your actual design values when available.
+Builds AircraftConfig objects from per-aircraft data files in data/.
 """
 
 from sizing import (
     Engine, MissionSegment, AircraftConfig, SegmentType,
     standard_atmosphere, NM_TO_FT, climb_weight_fraction,
 )
+from data.ZRJ70 import AIRCRAFT as ZRJ70
+from data.ZRJ100 import AIRCRAFT as ZRJ100
+from data.ZRJ50 import AIRCRAFT as ZRJ50
 
 
 # ═════════════════════════════════════════════════════════════════
-#  ENGINE  (fixed – not a rubber engine)
+#  HELPERS
 # ═════════════════════════════════════════════════════════════════
 
-engine = Engine(
-    name="PW1200G",
-    tsfc_cruise=0.48,                   # [lb/(lb·hr)] at cruise — estimated for high-BPR GTF
-    tsfc_loiter=0.38,                   # [lb/(lb·hr)] at loiter — ~80% of cruise TSFC
-    max_thrust_per_engine=19_190,       # [lbf] sea level static
-    num_engines=2,
-    bypass_ratio=9.0,
-)
+_PERSON_WEIGHT = 197                    # [lbs] per crew member incl. bag
 
 
-# ═════════════════════════════════════════════════════════════════
-#  MISSION PROFILE BUILDERS
-# ═════════════════════════════════════════════════════════════════
+def _crew_weight(d: dict) -> float:
+    return (d["n_pilots"] + d["n_flight_attendants"]) * _PERSON_WEIGHT
+
+
+def _engine_from(d: dict) -> Engine:
+    return Engine(
+        name=d["engine_name"],
+        tsfc_cruise=d["tsfc_cruise"],
+        tsfc_loiter=d["tsfc_loiter"],
+        max_thrust_per_engine=d["max_thrust_per_engine"],
+        num_engines=d["num_engines"],
+        bypass_ratio=d["bypass_ratio"],
+    )
+
 
 def _cruise_velocity_fps(mach: float, altitude_ft: float) -> float:
     atm = standard_atmosphere(altitude_ft)
@@ -35,9 +41,9 @@ def _cruise_velocity_fps(mach: float, altitude_ft: float) -> float:
 
 
 def international_mission(range_nm: float,
-                          alternate_nm: float = 200.0,
+                          alternate_nm: float = 100.0,
                           cruise_mach: float = 0.78,
-                          cruise_alt: float = 41_000.0,
+                          cruise_alt: float = 35_000.0,
                           loiter_2_min: float = 30.0,
                           contingency_frac: float = 0.10) -> list[MissionSegment]:
     """
@@ -106,138 +112,57 @@ def international_mission(range_nm: float,
     ]
 
 
+def _build_config(d: dict, name: str,
+                  composite_factor: float | None = None) -> AircraftConfig:
+    """Build an AircraftConfig from a data dict."""
+    cf = composite_factor if composite_factor is not None else d["composite_factor"]
+    return AircraftConfig(
+        name=name,
+        payload_weight=d["payload_weight"],
+        crew_weight=_crew_weight(d),
+        cd0=d["cd0"],
+        composite_factor=cf,
+        engine=_engine_from(d),
+        segments=international_mission(
+            range_nm=d["design_range_nm"],
+            alternate_nm=d["alternate_range_nm"],
+            cruise_mach=d["cruise_mach"],
+            cruise_alt=d["cruise_altitude_ft"],
+        ),
+        reserve_after_segment=5,
+        aspect_ratio=d["aspect_ratio"],
+        oswald_e=d["oswald_e"],
+        wing_area_ft2=d["wing_area_ft2"],
+        mach_max=d["mach_max"],
+        cruise_mach=d["cruise_mach"],
+        cruise_altitude_ft=d["cruise_altitude_ft"],
+        ew_a=d["ew_a"],
+        ew_C1=d["ew_C1"],
+        ew_C2=d["ew_C2"],
+        ew_C3=d["ew_C3"],
+        ew_C4=d["ew_C4"],
+        ew_C5=d["ew_C5"],
+        Kvs=d["Kvs"],
+        trapped_fuel_factor=d["trapped_fuel_factor"],
+    )
+
+
 # ═════════════════════════════════════════════════════════════════
 #  AIRCRAFT VARIANTS
 # ═════════════════════════════════════════════════════════════════
-#
-#  All three share the same engine and cruise conditions.
-#  Differences: payload, range, composite vs. non-composite.
-#
 
-# ── Crew weights ─────────────────────────────────────────────────
-# 197 lbs per person (includes personal bag)
+# ── ZRJ70 (76-seat, NA) ───────────────────────────────────────
+na_composite    = _build_config(ZRJ70, "ZRJ70 (Composite)")
+na_no_composite = _build_config(ZRJ70, "ZRJ70 (No Composite)", composite_factor=1.0)
 
-_PERSON_WEIGHT = 197                    # [lbs] per crew member incl. bag
+# ── ZRJ100 (100-seat, EU) ─────────────────────────────────────
+eu_composite    = _build_config(ZRJ100, "ZRJ100 (Composite)")
+eu_no_composite = _build_config(ZRJ100, "ZRJ100 (No Composite)", composite_factor=1.0)
 
-_NA_CREW = 2 * _PERSON_WEIGHT + 2 * _PERSON_WEIGHT   # 2 pilots + 2 FAs = 788 lbs
-_EU_CREW = 2 * _PERSON_WEIGHT + 3 * _PERSON_WEIGHT   # 2 pilots + 3 FAs = 985 lbs
-
-
-# ── Common aerodynamic / geometric parameters ───────────────────
-# *** UPDATE ALL OF THESE WITH YOUR DESIGN VALUES ***
-
-_COMMON_AERO = dict(
-    aspect_ratio=7.8,
-    oswald_e=0.753,
-    wing_area_ft2=792.47,       # [ft²]
-    mach_max=0.85,
-    cruise_mach=0.78,
-    cruise_altitude_ft=41_000.0,
-)
-
-_CRUISE_MACH = _COMMON_AERO["cruise_mach"]
-_CRUISE_ALT = _COMMON_AERO["cruise_altitude_ft"]
-
-# ── Design ranges ────────────────────────────────────────────────
-
-_RANGE_BUFFER = 50                      # [nm] margin for drag/weight uncertainty
-_NA_RANGE = 1800 + _RANGE_BUFFER        # [nm] 1800 + 50 buffer
-_EU_RANGE = 1200 + _RANGE_BUFFER        # [nm] 1200 + 50 buffer
-
-
-# ── 1. North America variant (composite) ────────────────────────
-
-na_composite = AircraftConfig(
-    name="NA Variant (Composite)",
-    payload_weight=18_055,              # [lbs] passengers + cargo
-    crew_weight=_NA_CREW,               # [lbs] 2 pilots + 2 FAs
-    cd0=0.02113,
-    composite_factor=0.97,              # Composite wing + tail, metal fuselage
-    engine=engine,
-    segments=international_mission(
-        range_nm=_NA_RANGE, alternate_nm=200,
-        cruise_mach=_CRUISE_MACH, cruise_alt=_CRUISE_ALT,
-    ),
-    reserve_after_segment=5,
-    **_COMMON_AERO,
-)
-
-
-# ── 2. European variant (composite) ─────────────────────────────
-
-eu_composite = AircraftConfig(
-    name="EU Variant (Composite)",
-    payload_weight=23_380,              # [lbs] passengers + cargo
-    crew_weight=_EU_CREW,               # [lbs] 2 pilots + 3 FAs
-    cd0=0.02185,
-    composite_factor=0.97,              # Composite wing + tail, metal fuselage
-    engine=engine,
-    segments=international_mission(
-        range_nm=_EU_RANGE, alternate_nm=200,
-        cruise_mach=_CRUISE_MACH, cruise_alt=_CRUISE_ALT,
-    ),
-    reserve_after_segment=5,
-    **_COMMON_AERO,
-)
-
-
-# ── 3. North America variant (no composite) ─────────────────────
-
-na_no_composite = AircraftConfig(
-    name="NA Variant (No Composite)",
-    payload_weight=18_055,
-    crew_weight=_NA_CREW,
-    cd0=0.02113,
-    composite_factor=1.0,               # No composite benefit
-    engine=engine,
-    segments=international_mission(
-        range_nm=_NA_RANGE, alternate_nm=200,
-        cruise_mach=_CRUISE_MACH, cruise_alt=_CRUISE_ALT,
-    ),
-    reserve_after_segment=5,
-    **_COMMON_AERO,
-)
-
-
-# ── 4. European variant (no composite) ────────────────────────
-
-eu_no_composite = AircraftConfig(
-    name="EU Variant (No Composite)",
-    payload_weight=23_380,
-    crew_weight=_EU_CREW,
-    cd0=0.02185,
-    composite_factor=1.0,               # No composite benefit
-    engine=engine,
-    segments=international_mission(
-        range_nm=_EU_RANGE, alternate_nm=200,
-        cruise_mach=_CRUISE_MACH, cruise_alt=_CRUISE_ALT,
-    ),
-    reserve_after_segment=5,
-    **_COMMON_AERO,
-)
-
-
-# ── 5. NA 50-Seat variant (composite, fixed W0 = 65,000 lbs) ─────
-
-_NA50_PAYLOAD = 50 * _PERSON_WEIGHT + 50 * 30   # 50 pax + 50 bags @ 30 lbs
-
-na_50seat = AircraftConfig(
-    name="NA 50-Seat (Composite)",
-    payload_weight=_NA50_PAYLOAD,                # 11,350 lbs
-    crew_weight=_NA_CREW,                        # 788 lbs (2 pilots + 2 FAs)
-    cd0=0.02113,
-    composite_factor=0.97,
-    engine=engine,
-    segments=international_mission(
-        range_nm=_NA_RANGE, alternate_nm=200,
-        cruise_mach=_CRUISE_MACH, cruise_alt=_CRUISE_ALT,
-    ),
-    reserve_after_segment=5,
-    **_COMMON_AERO,
-)
-
-NA_50SEAT_W0 = 65_000                           # Fixed MTOW constraint [lbs]
-NA_50SEAT_REF = na_composite                    # Same airframe → use its We
+# ── ZRJ50 (50-seat, constrained) ──────────────────────────────
+na_50seat    = _build_config(ZRJ50, "ZRJ50 (Composite)")
+NA_50SEAT_W0 = ZRJ50["fixed_w0"]
+NA_50SEAT_REF = na_composite                # Same airframe → use its We
 
 
 # Collect all variants for easy iteration

@@ -12,7 +12,6 @@ from functools import partial
 from sizing import solve_takeoff_weight, evaluate_fixed_w0, find_max_range, SegmentType
 from configs import (
     ALL_VARIANTS, CONSTRAINED_VARIANTS, international_mission,
-    _CRUISE_MACH, _CRUISE_ALT, _NA_RANGE,
 )
 
 
@@ -113,48 +112,40 @@ def print_comparison_table(results):
     print("  VARIANT COMPARISON")
     print(f"{'=' * 72}")
 
-    names = [r.config_name for r in results]
-    # Truncate names for table
-    short_names = []
-    for n in names:
-        if "NA" in n and "No" in n:
-            short_names.append("NA (No Comp)")
-        elif "NA" in n:
-            short_names.append("NA (Comp)")
-        elif "EU" in n and "No" in n:
-            short_names.append("EU (No Comp)")
-        elif "EU" in n:
-            short_names.append("EU (Comp)")
-        else:
-            short_names.append(n[:14])
+    short_names = [r.config_name for r in results]
+    col_w = max(max(len(n) for n in short_names), 14) + 2
 
     header = f"  {'Parameter':<26}"
     for sn in short_names:
-        header += f" {sn:>14}"
+        header += f" {sn:>{col_w}}"
     print(header)
-    print(f"  {'─' * (26 + 15 * len(results))}")
+    print(f"  {'─' * (26 + (col_w + 1) * len(results))}")
+
+    def fv(val, fmt):
+        """Format value with dynamic column width."""
+        return f"{val:>{col_w}{fmt}}"
 
     rows = [
-        ("W0 [lbs]",        [f"{r.w0:>14,.0f}" for r in results]),
-        ("We [lbs]",        [f"{r.we:>14,.0f}" for r in results]),
-        ("Wf [lbs]",        [f"{r.wf:>14,.0f}" for r in results]),
-        ("Crew [lbs]",      [f"{r.w_crew:>14,.0f}" for r in results]),
-        ("Payload [lbs]",   [f"{r.w_payload:>14,.0f}" for r in results]),
-        ("We/W0",           [f"{r.we_frac:>14.4f}" for r in results]),
-        ("Wf/W0",           [f"{r.wf_frac:>14.4f}" for r in results]),
-        ("Trip Fuel [lbs]", [f"{r.trip_fuel:>14,.0f}" for r in results]),
-        ("Reserve [lbs]",   [f"{r.reserve_fuel:>14,.0f}" for r in results]),
-        ("T/W (SLS)",       [f"{r.thrust_to_weight:>14.3f}" for r in results]),
-        ("W/S [psf]",       [f"{r.wing_loading:>14.1f}" for r in results]),
-        ("L/D cruise",      [f"{r.ld_cruise:>14.2f}" for r in results]),
-        ("(L/D)_max",       [f"{r.ld_max:>14.2f}" for r in results]),
-        ("Growth Factor",   [f"{r.growth_factor:>14.2f}" for r in results]),
+        ("W0 [lbs]",        [fv(r.w0, ",.0f") for r in results]),
+        ("We [lbs]",        [fv(r.we, ",.0f") for r in results]),
+        ("Wf [lbs]",        [fv(r.wf, ",.0f") for r in results]),
+        ("Crew [lbs]",      [fv(r.w_crew, ",.0f") for r in results]),
+        ("Payload [lbs]",   [fv(r.w_payload, ",.0f") for r in results]),
+        ("We/W0",           [fv(r.we_frac, ".4f") for r in results]),
+        ("Wf/W0",           [fv(r.wf_frac, ".4f") for r in results]),
+        ("Trip Fuel [lbs]", [fv(r.trip_fuel, ",.0f") for r in results]),
+        ("Reserve [lbs]",   [fv(r.reserve_fuel, ",.0f") for r in results]),
+        ("T/W (SLS)",       [fv(r.thrust_to_weight, ".3f") for r in results]),
+        ("W/S [psf]",       [fv(r.wing_loading, ".1f") for r in results]),
+        ("L/D cruise",      [fv(r.ld_cruise, ".2f") for r in results]),
+        ("(L/D)_max",       [fv(r.ld_max, ".2f") for r in results]),
+        ("Growth Factor",   [fv(r.growth_factor, ".2f") for r in results]),
     ]
 
     for label, vals in rows:
         line = f"  {label:<26}"
         for v in vals:
-            line += v
+            line += f" {v}"
         print(line)
 
 
@@ -193,7 +184,7 @@ def print_constrained_variant(config, fixed_w0, design_range, ref_we):
 
         # Find max range that closes
         builder = partial(
-            international_mission, alternate_nm=200,
+            international_mission, alternate_nm=100,
             cruise_mach=config.cruise_mach,
             cruise_alt=config.cruise_altitude_ft,
         )
@@ -299,7 +290,7 @@ def print_range_sensitivity(base_config, range_values):
     for r_nm in range_values:
         cfg = copy.deepcopy(base_config)
         cfg.segments = international_mission(
-            range_nm=r_nm, alternate_nm=200,
+            range_nm=r_nm, alternate_nm=100,
             cruise_mach=cfg.cruise_mach, cruise_alt=cfg.cruise_altitude_ft,
         )
         result = solve_takeoff_weight(cfg)

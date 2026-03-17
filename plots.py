@@ -54,7 +54,7 @@ def plot_range_sensitivity(base_config, range_values):
     for r_nm in range_values:
         cfg = copy.deepcopy(base_config)
         cfg.segments = international_mission(
-            range_nm=r_nm, alternate_nm=200,
+            range_nm=r_nm, alternate_nm=100,
             cruise_mach=cfg.cruise_mach, cruise_alt=cfg.cruise_altitude_ft,
         )
         result = solve_takeoff_weight(cfg)

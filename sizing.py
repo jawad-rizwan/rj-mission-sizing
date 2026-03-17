@@ -134,7 +134,7 @@ class AircraftConfig:
 
     # ── Cruise conditions ──
     cruise_mach: float = 0.78
-    cruise_altitude_ft: float = 41000.0
+    cruise_altitude_ft: float = 35000.0
 
     # ── Fuel ──
     trapped_fuel_factor: float = 1.06  # 5% reserve + 1% trapped (Raymer §6.3.4)
@@ -268,42 +268,23 @@ def loiter_weight_fraction(endurance_min: float, tsfc_hr: float,
     return math.exp(-E_s * C_per_s / ld_ratio)
 
 
-def empty_weight_fraction_ch3(w0: float, A: float = 1.272,
-                               C: float = -0.072,
-                               Kvs: float = 1.0,
-                               composite_factor: float = 1.0) -> float:
-    """
-    Simple empty weight fraction (Raymer Table 3.1 – Jet Transport).
-
-    We/W0 = A · W0^C · Kvs · composite_factor
-    """
-    return A * (w0 ** C) * Kvs * composite_factor
-
-
-def empty_weight_fraction_ch6(w0: float, config: "AircraftConfig",
-                               tw_ratio: float,
-                               wing_loading: float) -> float:
+def empty_weight_fraction(w0: float, config: "AircraftConfig",
+                          tw_ratio: float,
+                          wing_loading: float) -> float:
     """
     Refined empty weight fraction (Raymer Table 6.1 – Jet Transport).
 
     We/W0 = a · W0^C1 · A^C2 · (T/W0)^C3 · (W0/S)^C4 · Mmax^C5 · Kvs · composite
-
-    Args:
-        w0:           Current W0 guess [lbs]
-        config:       Aircraft configuration
-        tw_ratio:     Thrust-to-weight ratio (T/W0) at current W0
-        wing_loading: Wing loading (W0/S) at current W0 [psf]
     """
     c = config
-    we_w0 = (c.ew_a
-             * w0 ** c.ew_C1
-             * c.aspect_ratio ** c.ew_C2
-             * tw_ratio ** c.ew_C3
-             * wing_loading ** c.ew_C4
-             * c.mach_max ** c.ew_C5
-             * c.Kvs
-             * c.composite_factor)
-    return we_w0
+    return (c.ew_a
+            * w0 ** c.ew_C1
+            * c.aspect_ratio ** c.ew_C2
+            * tw_ratio ** c.ew_C3
+            * wing_loading ** c.ew_C4
+            * c.mach_max ** c.ew_C5
+            * c.Kvs
+            * c.composite_factor)
 
 
 # ── Solver ───────────────────────────────────────────────────────
@@ -374,8 +355,7 @@ def compute_segment_results(config: AircraftConfig,
 def solve_takeoff_weight(config: AircraftConfig,
                          w0_guess: float = 60000.0,
                          tolerance: float = 0.5,
-                         max_iter: int = 200,
-                         use_ch6_weights: bool = True) -> SizingResult:
+                         max_iter: int = 200) -> SizingResult:
     """
     Iteratively solve for W0 (Raymer §6.3.2 / §6.4).
 
@@ -419,14 +399,8 @@ def solve_takeoff_weight(config: AircraftConfig,
         total_fuel = config.trapped_fuel_factor * mission_fuel
         wf_frac = total_fuel / w0
 
-        # Empty weight fraction
-        if use_ch6_weights:
-            we_frac = empty_weight_fraction_ch6(w0, config, tw, ws)
-        else:
-            we_frac = empty_weight_fraction_ch3(
-                w0, Kvs=config.Kvs,
-                composite_factor=config.composite_factor
-            )
+        # Empty weight fraction (Raymer Table 6.1)
+        we_frac = empty_weight_fraction(w0, config, tw, ws)
 
         # Sizing equation (Raymer Eq 6.1)
         denom = 1.0 - wf_frac - we_frac
@@ -449,10 +423,7 @@ def solve_takeoff_weight(config: AircraftConfig,
     ld_cruise = config.ld_from_drag_polar(ws_final)
     ld_max_val = config.ld_max
 
-    we_frac = (empty_weight_fraction_ch6(w0, config, tw_final, ws_final)
-               if use_ch6_weights
-               else empty_weight_fraction_ch3(w0, Kvs=config.Kvs,
-                                               composite_factor=config.composite_factor))
+    we_frac = empty_weight_fraction(w0, config, tw_final, ws_final)
     we = w0 * we_frac
 
     # Re-run mission at final W0 for accurate fuel breakdown
@@ -520,7 +491,7 @@ def evaluate_fixed_w0(config: AircraftConfig, w0: float,
         we = fixed_we
         we_frac = we / w0
     else:
-        we_frac = empty_weight_fraction_ch6(w0, config, tw, ws)
+        we_frac = empty_weight_fraction(w0, config, tw, ws)
         we = w0 * we_frac
 
     trip_fuel = sum(sr.fuel_burned for sr in seg_results[:config.reserve_after_segment])
