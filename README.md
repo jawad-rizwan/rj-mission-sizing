@@ -25,7 +25,7 @@ python3 plots.py
 | `configs.py` | Mission profile builder and aircraft variant assembly from data files |
 | `data/` | Per-aircraft data files (`ZRJ70.py`, `ZRJ100.py`, `ZRJ50.py`) |
 | `main.py` | CLI output — per-variant results, comparison table, range sensitivity |
-| `plots.py` | Matplotlib visualizations — weight breakdown, range sensitivity, fuel burn profile, variant comparison |
+| `plots.py` | Matplotlib visualizations — weight breakdown, range sensitivity, fuel burn profile, mission profile, variant comparison |
 | `plots_output/` | Generated chart images |
 
 ## Design Parameters
