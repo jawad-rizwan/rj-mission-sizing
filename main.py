@@ -66,6 +66,14 @@ def print_variant_result(result):
     print(f"    {'Reserve Fuel:':<28} {fmt_weight(r.reserve_fuel):>10} lbs"
           f"  ({r.reserve_fuel/w0*100:5.1f}%)")
 
+    # MTOW warning
+    mtow_limits = {"ZRJ70": 86_000}
+    for tag, limit in mtow_limits.items():
+        if tag in r.config_name and w0 > limit:
+            excess = w0 - limit
+            print(f"\n    ⚠  WARNING: W0 exceeds {tag} MTOW cap of"
+                  f" {fmt_weight(limit)} lbs by {fmt_weight(excess)} lbs")
+
     # Verify weights add up
     residual = abs(w0 - r.we - r.wf - r.w_crew - r.w_payload)
     if residual > 1.0:
