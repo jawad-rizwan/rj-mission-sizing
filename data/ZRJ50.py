@@ -30,8 +30,8 @@ AIRCRAFT = {
 
     # --- Engine (PW1200G) ---
     "engine_name": "PW1200G",
-    "tsfc_cruise": 0.46,               # lb/(lb-hr), modern GTF at BPR 9
-    "tsfc_loiter": 0.37,               # lb/(lb-hr), ~80% of cruise
+    "tsfc_cruise": 0.50,               # lb/(lb-hr), Raymer Table 3.3 (high-BPR turbofan)
+    "tsfc_loiter": 0.40,               # lb/(lb-hr), ~80% of cruise
     "max_thrust_per_engine": 19_190,    # lbf, sea level static
     "num_engines": 2,
     "bypass_ratio": 9.0,
