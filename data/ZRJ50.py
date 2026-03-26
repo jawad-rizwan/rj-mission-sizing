@@ -20,7 +20,7 @@ AIRCRAFT = {
     # --- Aerodynamics (same airframe as ZRJ70) ---
     "cd0": 0.01843,                     # zero-lift drag coefficient (same as ZRJ70)
     "aspect_ratio": 7.8,               # wing aspect ratio
-    "oswald_e": 0.753,                  # Oswald span efficiency
+    "oswald_e": 0.727,                  # Oswald span efficiency
     "wing_area_ft2": 1016.58,          # ft^2, reference wing area (same as ZRJ70)
     "mach_max": 0.85,                   # max operating Mach
 
@@ -30,8 +30,8 @@ AIRCRAFT = {
 
     # --- Engine (PW1200G) ---
     "engine_name": "PW1200G",
-    "tsfc_cruise": 0.50,               # lb/(lb-hr), Raymer Table 3.3 (high-BPR turbofan)
-    "tsfc_loiter": 0.40,               # lb/(lb-hr), ~80% of cruise
+    "tsfc_cruise": 0.5167,             # lb/(lb-hr), PW1200G cruise
+    "tsfc_loiter": 0.4134,             # lb/(lb-hr), ~80% of cruise
     "max_thrust_per_engine": 19_190,    # lbf, sea level static
     "num_engines": 2,
     "bypass_ratio": 9.0,
