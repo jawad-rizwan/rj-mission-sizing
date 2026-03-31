@@ -46,9 +46,9 @@ python3 plots.py
 
 | Variant | Pax | Payload (lbs) | Range (nm) | CD0 | Composite |
 |---------|-----|--------------|------------|-----|-----------|
-| ZRJ70 (Composite) | 76 | 23,347 | 1,800 | 0.01843 | 0.97 |
+| ZRJ70 (Composite) | 76 | 20,347 | 1,800 | 0.01843 | 0.97 |
 | ZRJ100 (Composite) | 100 | 26,092 | 1,200 | 0.01910 | 0.97 |
-| ZRJ70 (No Composite) | 76 | 23,347 | 1,800 | 0.01843 | 1.00 |
+| ZRJ70 (No Composite) | 76 | 20,347 | 1,800 | 0.01843 | 1.00 |
 | ZRJ100 (No Composite) | 100 | 26,092 | 1,200 | 0.01910 | 1.00 |
 | ZRJ50 (Composite) | 50 | 11,350 | 1,800* | 0.01843 | 0.97 |
 
@@ -60,35 +60,35 @@ Composite factor of 0.97 reflects composite wing + tail with metal fuselage.
 
 | Parameter | ZRJ70 (Comp) | ZRJ100 (Comp) | ZRJ70 (No Comp) | ZRJ100 (No Comp) |
 |-----------|-------------|---------------|-----------------|-------------------|
-| W0 [lbs] | 103,606 | 100,719 | 107,856 | 104,558 |
-| We [lbs] | 55,040 | 53,959 | 58,366 | 57,108 |
-| Total Fuel [lbs] | 24,431 | 19,880 | 25,355 | 20,571 |
-| Trip Fuel [lbs] | 19,079 | 14,679 | 19,788 | 15,177 |
-| Reserve Fuel [lbs] | 5,352 | 5,202 | 5,566 | 5,394 |
-| T/W (SLS) | 0.370 | 0.381 | 0.356 | 0.367 |
-| W/S [psf] | 101.9 | 99.1 | 106.1 | 102.9 |
-| L/D cruise | 15.31 | 14.90 | 15.40 | 15.01 |
+| W0 [lbs] | 96,308 | 100,719 | 100,361 | 104,558 |
+| We [lbs] | 52,289 | 53,959 | 55,488 | 57,108 |
+| Total Fuel [lbs] | 22,884 | 19,880 | 23,737 | 20,571 |
+| Trip Fuel [lbs] | 17,899 | 14,679 | 18,549 | 15,177 |
+| Reserve Fuel [lbs] | 4,986 | 5,202 | 5,189 | 5,394 |
+| T/W (SLS) | 0.399 | 0.381 | 0.382 | 0.367 |
+| W/S [psf] | 94.7 | 99.1 | 98.7 | 102.9 |
+| L/D cruise | 15.08 | 14.90 | 15.22 | 15.01 |
 | (L/D)_max | 15.55 | 15.27 | 15.55 | 15.27 |
-| Growth Factor | 4.44 | 3.86 | 4.62 | 4.01 |
+| Growth Factor | 4.73 | 3.86 | 4.93 | 4.01 |
 
 ### ZRJ50 (Composite) — Same Airframe, Fixed W0 = 65,000 lbs
 
-CRJ550-style derivative: same airframe as ZRJ70 (We = 55,040 lbs), reconfigured to 50-seat cabin, constrained to W0 = 65,000 lbs.
+CRJ550-style derivative: same airframe as ZRJ70 (We = 52,289 lbs), reconfigured to 50-seat cabin, constrained to W0 = 65,000 lbs.
 
-**Result: Infeasible at 65,000 lbs.** Even at zero cruise range, overhead weight (We + min fuel + crew + payload = 74,777 lbs) exceeds the cap by 9,777 lbs. The minimum W0 for zero useful range (100 nm) is ~75,960 lbs.
+**Result: Infeasible at 65,000 lbs.** Even at zero cruise range, overhead weight (We + min fuel + crew + payload = 72,026 lbs) exceeds the cap by 7,026 lbs. The minimum W0 for zero useful range (100 nm) is ~72,874 lbs.
 
 W0 vs. maximum range (same airframe, same payload):
 
 | W0 [lbs] | Max Range [nm] |
 |-----------|---------------|
-| 75,000 | Infeasible |
-| 77,000 | 245 |
-| 79,000 | 523 |
-| 81,000 | 799 |
-| 83,000 | 1,071 |
-| 85,000 | 1,342 |
-| 87,000 | 1,609 |
-| 89,000 | 1,872 |
+| 72,000 | Infeasible |
+| 74,000 | 261 |
+| 76,000 | 546 |
+| 78,000 | 829 |
+| 80,000 | 1,110 |
+| 82,000 | 1,387 |
+| 84,000 | 1,662 |
+| 86,000 | 1,933 |
 
 ## Methods
 
