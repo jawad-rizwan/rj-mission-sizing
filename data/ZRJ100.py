@@ -12,7 +12,7 @@ AIRCRAFT = {
     "alternate_range_nm": 100,          # nm, alternate airport distance (Embraer-based)
 
     # --- Payload & Crew ---
-    "payload_weight": 23_380,           # lbs, passengers + cargo (CRJ1000 max payload)
+    "payload_weight": 26_092,           # lbs, passengers + cargo
     "n_pilots": 2,
     "n_flight_attendants": 2,
 
